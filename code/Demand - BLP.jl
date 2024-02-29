@@ -1,3 +1,9 @@
+## Julia version 1.10
+Pkg.generate("BLPSFU")
+cd("BLPSFU") # Change directory to your project folder
+Pkg.activate(".")
+Pkg.instantiate()
+
 #= 
 Estimation of demand parameters through the BLP method.
 
