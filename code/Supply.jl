@@ -1,3 +1,9 @@
+## Julia version 1.10
+using Pkg
+#Pkg.generate("BLPSFU")
+cd("BLPSFU") # Change directory to your project folder
+Pkg.activate(".")
+Pkg.instantiate()
 #= 
 Estimation of supply side parameters. 
 
@@ -17,7 +23,7 @@ using DataFrames        # loading data
 using LinearAlgebra     # basic math
 
 # load data and set up variables
-cd("C:\\Users\\Ray\\Documents\\GitHub\\Julia BLP\\Julia-BLP\data and random draws")
+cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/data and random draws")
 
 # main dataset
 blp_data = CSV.read("BLP_product_data.csv", DataFrame)
@@ -98,7 +104,8 @@ by estimating supply and demand simultaneously.
 =#
 
 # load module with function to calculate price elasticities
-cd("C:\\Users\\Ray\\Documents\\GitHub\\Julia BLP\\Julia-BLP\\code")
+
+cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/code")
 include("supply_price_elasticities.jl")
 using .supply_price_elasticities
 
