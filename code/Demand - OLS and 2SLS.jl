@@ -1,3 +1,10 @@
+## Julia version 1.10
+using Pkg
+#Pkg.generate("BLPSFU")
+cd("BLPSFU") # Change directory to your project folder
+Pkg.activate(".")
+Pkg.instantiate()
+
 #= 
 Estimation of the demand parameters using OLS and 2SLS. Contains documentation of the variables.
 
@@ -10,7 +17,7 @@ using DataFrames        # loading data
 using LinearAlgebra     # basic math
 
 # set working directory
-cd("C:\\Users\\Ray\\Documents\\GitHub\\Julia BLP\\Julia-BLP\\data and random draws")
+cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/data and random draws")
 
 # load data
 blp_data = CSV.read("BLP_product_data.csv", DataFrame)
@@ -85,7 +92,7 @@ characteristics X without observing the demand shock for the given product ξ.
 =#
 
 n_products = size(id,1) # number of observations = 2217
-
+n_obs=size(blp_data)[1]
 # initialize arrays to hold the two sets of 5 instruments. 
 IV_others = zeros(n_obs,5)
 IV_rivals = zeros(n_obs,5)

@@ -12,14 +12,14 @@ The BLP objective function and its gradient are defined in BLP_functions and BLP
 Documentation of the BLP method and these functions is in the corresponding modules.
 
 Uses Optim optimization package to find the θ₂ that minimizes the function.
-The estimate for θ₂ is used to recover estimates of θ₁ from the objective function.
+The estimate for θ₂ is used to recover estimates of θ₁ (elasticities of mean demand) from the objective function.
 =#
 
 # Load key functions and packages -------------------------------------------------
 
 cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/code")
 
-include("demand_functions.jl")    # module with custom BLP functions (objective function and σ())
+include("demand_functions.jl")    # module with custom BLP functions (objective function and σ()/shares)
 include("demand_instruments.jl")  # module to calculate BLP instruments
 include("demand_derivatives.jl")  # module with gradient function 
 
@@ -50,7 +50,7 @@ id = Vector(blp_data[!,"id"])
 cdid = Vector(blp_data[!,"cdid"])
 firmid = Vector(blp_data[!,"firmid"])
 
-# BLP instruments. Function uses same code as Question 1b to calculate instruments.
+# BLP instruments. Following BLP95.
 # price (column 1) not included in BLP instruments.
 
 #= BLP instruments =#
@@ -67,7 +67,7 @@ using BenchmarkTools    # for timing/benchmarking functions
 
 # test run and timing of objective function and gradient
 # Q, θ₁, ξ, 𝒯 = demand_objective_function(θ₂,X,share,Z,v_50,cdid) # returns 4 values  
-# @btime demand_objective_function($θ₂,$X,$share,$Z,$v_50,$cdid)  
+@btime demand_objective_function($θ₂,$X,$share,$Z,$v_50,$cdid)  
 # Usually <100ms. Speed varies depending on θ₂.
 
 # g = gradient(θ₂,X,Z,v_50,cdid,ξ,𝒯)
