@@ -1,8 +1,12 @@
 ## Julia version 1.10
 using Pkg
 #Pkg.generate("BLPSFU")
-cd("BLPSFU") # Change directory to your project folder
-Pkg.activate(".")
+
+# Determine the current directory
+
+rootdir = @projectroot()
+
+Pkg.activate("BLPSFU")
 Pkg.instantiate()
 
 #= 
@@ -16,11 +20,12 @@ using CSV               # loading data
 using DataFrames        # loading data
 using LinearAlgebra     # basic math
 
-# set working directory
-cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/data and random draws")
 
 # load data
-blp_data = CSV.read("BLP_product_data.csv", DataFrame)
+
+blp_data_path = @projectroot("data and random draws", "BLP_product_data.csv")
+
+blp_data = CSV.read(blp_data_path, DataFrame)
 
 #= blp data contains the following variables
 

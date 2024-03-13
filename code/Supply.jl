@@ -1,11 +1,14 @@
 ## Julia version 1.10
 using Pkg
+using ProjectRoot
+
+rootdir = @projectroot()
+
 #Pkg.generate("BLPSFU")
-cd("BLPSFU") # Change directory to your project folder
-Pkg.activate(".")
+Pkg.activate("BLPSFU")
 Pkg.instantiate()
-#= 
-Estimation of supply side parameters. 
+
+#= Estimation of supply side parameters. 
 
 Estimate the pricing equation for product j in market m: 
     ln(mcⱼₘ) = Xⱼₘθ₃ + ωⱼₘ 
@@ -23,10 +26,13 @@ using DataFrames        # loading data
 using LinearAlgebra     # basic math
 
 # load data and set up variables
-cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/data and random draws")
 
 # main dataset
-blp_data = CSV.read("BLP_product_data.csv", DataFrame)
+
+blp_data_path = @projectroot("data and random draws", "BLP_product_data.csv")
+
+blp_data = CSV.read(blp_data_path, DataFrame)
+
 # construct vector of observables Xⱼₘ
 X = Matrix(blp_data[!, ["const","hpwt","air","mpg","space"]]) # exogenous X variables
 x₁= Matrix(blp_data[!, ["price", "const","hpwt","air","mpg","space"]]) # all X variables (price included)
@@ -42,9 +48,14 @@ market_id = Vector(blp_data[!, "cdid"])
 θ₁ = [-0.427, -9.999, 2.801, 1.099, -0.430, 2.795]
 θ₂ = [ 0.172, -2.528, 0.763, 0.589,  0.595]
 
+random_draws_50_individuals_path = @projectroot("data and random draws", "random_draws_50_individuals.csv")
+
+random_draws_5000_individuals_path = @projectroot("data and random draws", "random_draws_5000_individuals.csv")
+
 # pre-selected random draws
-v_50 = Matrix(CSV.read("random_draws_50_individuals.csv", DataFrame, header=0)) # pre-selected random draws from joint normal to simulate 50 individuals
-v_5000 = Matrix(CSV.read("random_draws_5000_individuals.csv", DataFrame, header=0)) # pre-selected random draws from joint normal to simulate 50 individuals
+v_50 = Matrix(CSV.read(random_draws_50_individuals_path, DataFrame, header=0)) # pre-selected random draws from joint normal to simulate 50 individuals
+
+v_5000 = Matrix(CSV.read(random_draws_5000_individuals_path, DataFrame, header=0)) # pre-selected random draws from joint normal to simulate 50 individuals
 
 # reshape to 3-d arrays: v(market, individual, coefficient draw) 
 # the sets of 50 individuals (v_50) is used in most places to estimate market share. 50 is a compromise between speed and precision.
@@ -56,12 +67,10 @@ v_5000 = reshape(v_5000, (20,5000,5)) # 20 markets, 5000 individuals per market,
 # --------------------------------------------------------------------------------- 
 # Part 1 - Marginal cost pricing
 # Assume firms price at marginal cost (competitive market) and solve for parameters with OLS.
-
 # set marginal cost equal to price
 MC = P
 
 # OLS Regression 
-
 # parameter estimates
 θ₃ = inv(X'X)X'log.(MC)
 
@@ -77,7 +86,6 @@ SE_θ₃ = sqrt.(Diagonal(Var_θ₃))
 # solution to 2a is θ₃ and SE_θ₃.
 # θ₃     = [1.625  1.534  0.741  -0.133  0.127]
 # SE_θ₃  = [0.100  0.099  0.020   0.018  0.042]
-
 
 #=------------------------------------------------------------------------------------
 # Part 2 - Multi-product firms setting prices in equilibrium
@@ -105,8 +113,11 @@ by estimating supply and demand simultaneously.
 
 # load module with function to calculate price elasticities
 
-cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/code")
+# supply price elasticites path
+
 include("supply_price_elasticities.jl")
+
+#include(supply_price_elasticities_path)
 using .supply_price_elasticities
 
 # calculate matrix of price elasticities
