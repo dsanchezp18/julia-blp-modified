@@ -1,8 +1,18 @@
 ## Julia version 1.10
 #Pkg.generate("BLPSFU")
 using Pkg
-cd("BLPSFU") # Change directory to your project folder
-Pkg.activate(".")
+using ProjectRoot
+using CSV               # loading data
+using DataFrames        # loading data
+using LinearAlgebra     # basic math
+using Statistics        # for mean
+
+# Determine the current directory
+
+rootdir = @projectroot()
+
+#cd("BLPSFU") # Change directory to your project folder
+Pkg.activate("BLPSFU")
 Pkg.instantiate()
 
 #= 
@@ -17,27 +27,23 @@ The estimate for θ₂ is used to recover estimates of θ₁ from the objective 
 
 # Load key functions and packages -------------------------------------------------
 
-cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/code")
-
-include("demand_functions.jl")    # module with custom BLP functions (objective function and σ())
-include("demand_instruments.jl")  # module to calculate BLP instruments
-include("demand_derivatives.jl")  # module with gradient function 
+include(@projectroot("code", "demand_functions.jl"))    # module with custom BLP functions (objective function and σ())
+include(@projectroot("code", "demand_instruments.jl")) # module to calculate BLP instruments
+include(@projectroot("code", "demand_derivatives.jl")) # module with gradient function 
 
 using .demand_functions
 using .demand_instrument_module
 using .demand_derivatives
 
-using CSV               # loading data
-using DataFrames        # loading data
-using LinearAlgebra     # basic math
-using Statistics        # for mean
-
-
 # Load key data ------------------------------------------------------------------
-cd("/Users/victoraguiar/Documents/GitHub/Julia-BLP/data and random draws")
 
-blp_data = CSV.read("BLP_product_data.csv", DataFrame) # dataframe with all observables 
-v_50 = Matrix(CSV.read("random_draws_50_individuals.csv", DataFrame, header=0)) # pre-selected random draws from joint normal to simulate 50 individuals
+blp_data_path = @projectroot("data and random draws", "BLP_product_data.csv")
+
+random_draws_path = @projectroot("data and random draws", "random_draws_50_individuals.csv")
+
+blp_data = CSV.read(blp_data_path, DataFrame) # dataframe with all observables 
+
+v_50 = Matrix(CSV.read(random_draws_path, DataFrame, header=0)) # pre-selected random draws from joint normal to simulate 50 individuals
 # reshape to 3-d arrays: v(market, individual, coefficient draw) 
 v_50 = reshape(v_50, (20,50,5)) # 20 markets, 50 individuals per market, 5 draws per invididual (one for each θ₂ random effect coefficient)
 
@@ -121,7 +127,6 @@ using BenchmarkTools    # for timing/benchmarking functions
 # @btime gradient($θ₂,$X,$Z,$v_50,$cdid,$ξ,$𝒯)
 # ~ 1.1 seconds. 
 
-
 # temporary ananomyous functions for objective function and gradient
 function f(θ₂)
     # run objective function and get key outputs
@@ -144,9 +149,9 @@ end
 
 # optimization routines
 result = optimize(f, θ₂, NelderMead(), Optim.Options(x_tol=1e-3, iterations=500, show_trace=true, show_every=10))
-result = optimize(f, ∇, θ₂, LBFGS(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))   
-result = optimize(f, ∇, θ₂, BFGS(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))
-result = optimize(f, ∇, θ₂, GradientDescent(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))
+# result = optimize(f, ∇, θ₂, LBFGS(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))   
+# result = optimize(f, ∇, θ₂, BFGS(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))
+# result = optimize(f, ∇, θ₂, GradientDescent(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))
 result = optimize(f, ∇, θ₂, ConjugateGradient(), Optim.Options(x_tol=1e-2, iterations=50, show_trace=true, show_every=1))
 
 # get results 
@@ -162,7 +167,6 @@ using JuMP
 using Ipopt
 
 ## Objective Function
-#ELVIS = JuMP.Model(KNITRO.Optimizer) 
 BLPdemand = JuMP.Model(Ipopt.Optimizer) 
 JuMP.@variable(BLPdemand, θ[1:5])
 
@@ -192,19 +196,19 @@ Does not use θ₁ as an input. Rather, backs out θ₁ from θ₂ in the step 2
 This allows for optimization over only the θ₂ coefficients (5) without including θ₁ (6 others).
 =#
 
-function fjump(θ...)
+θ = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+function fjump(θ, X, share, Z, v_50, cdid)
         # run objective function and get key outputs
         θ_matrix = [θ[1], θ[2], θ[3], θ[4], θ[5]]  # Reshape the vector into a one-row matrix
         Q, θ₁, ξ, 𝒯 = demand_objective_function(θ_matrix,X,share,Z,v_50,cdid)
         # return objective function value
         return Q
 end
-    
 
+fjump(θ,X,share,Z,v_50,cdid)
 
-
-function demandgradient(θ...)
-
+function demandgradient(θ, X,share,Z,v_50,cdid)
        # run objective function to update ξ and 𝒯 values for new θ₂
        θ_matrix = [θ[1], θ[2], θ[3], θ[4], θ[5]]  # Reshape the vector into a one-row matrix
        Q, θ₁, ξ, 𝒯 = demand_objective_function(θ_matrix,X,share,Z,v_50,cdid)
@@ -213,14 +217,12 @@ function demandgradient(θ...)
       return g
 end 
 
-
+demandgradient(θ,X,share,Z,v_50,cdid)
 
 JuMP.register(BLPdemand,:fjump,5,fjump,demandgradient;autodiff=false)
 #JuMP.register(BLPdemand,:fjump,5,fjump;autodiff=true)
 
 JuMP.@NLobjective(BLPdemand,Min,fjump(θ[1],θ[2],θ[3],θ[4],θ[5]))
-
-
 
 JuMP.optimize!(BLPdemand)
 minf=JuMP.objective_value(BLPdemand)
