@@ -1,19 +1,20 @@
 ## Julia version 1.10
 #Pkg.generate("BLPSFU")
 using Pkg
+
 using ProjectRoot
 using CSV               # loading data
 using DataFrames        # loading data
 using LinearAlgebra     # basic math
 using Statistics        # for mean
 
-# Determine the current directory
-
-rootdir = @projectroot()
-
 #cd("BLPSFU") # Change directory to your project folder
 Pkg.activate("BLPSFU")
 Pkg.instantiate()
+
+# Determine the current directory
+
+rootdir = @projectroot()
 
 #= 
 Estimation of demand parameters through the BLP method.
