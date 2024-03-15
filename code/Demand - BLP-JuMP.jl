@@ -92,7 +92,6 @@ function BLP_instruments(X, id, cdid, firmid)
         other_x_values = X[other_index,:]
         # sum along columns
         IV_others[j,:] = sum(other_x_values, dims=1)
-
         # 2. Set of instruments from rival product characteristics
         # get index of all products from different firms (firmid) in the same market/year (cdid)
         rival_index = (firmid.!=firmid[j]) .* (cdid.==cdid[j])
@@ -101,15 +100,12 @@ function BLP_instruments(X, id, cdid, firmid)
         # sum along columns
         IV_rivals[j,:] = sum(rival_x_values, dims=1)
     end
-
     # vector of observations and instruments
     IV = [X IV_others IV_rivals]
-
     return IV
 end
 
 Z = BLP_instruments(X[:,Not(1)], id, cdid, firmid)
-
 # export instruments to csv
 
 CSV.write("BLP_instruments.csv", DataFrame(Z, :auto))
