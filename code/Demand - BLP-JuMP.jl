@@ -110,6 +110,33 @@ end
 
 Z = BLP_instruments(X[:,Not(1)], id, cdid, firmid)
 
+# export instruments to csv
+
+CSV.write("BLP_instruments.csv", DataFrame(Z, :auto))
+
+# Exploring my demand objective function -----------------------------------------------------
+
+δ = zeros(size(share))
+
+n_individuals = size(v_50,2)
+n_products = size(X,1)
+
+θ₂ = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+# initial guess for θ₁. Random effects are set to 0.
+
+# repeat δ for each individual. 2217x50 matrix
+
+δ = repeat(δ,1,n_individuals) 
+
+
+μ = zeros(n_products, n_individuals)
+
+for market in unique(cdid)
+    μ[cdid.==market,:] = X[cdid.==market,Not(3)] * (v_50[market,:,:] .* θ₂')' 
+end
+
+μ
 
 # Minimize objective function -----------------------------------------------------
 using Optim             # for minimization functions
@@ -169,7 +196,7 @@ using Ipopt
 
 ## Objective Function
 BLPdemand = JuMP.Model(Ipopt.Optimizer) 
-JuMP.@variable(BLPdemand, θ[1:5])
+JuMP.@variable(BLPdemand, θ[1:2])
 
 #= Demand Objective Function -----------------------------------------------------------
 Performs the key steps for BLP demand estimation
@@ -196,10 +223,9 @@ market_id: 2217x1 vector of market id for each product/observation (cdid, market
 Does not use θ₁ as an input. Rather, backs out θ₁ from θ₂ in the step 2.
 This allows for optimization over only the θ₂ coefficients (5) without including θ₁ (6 others).
 =#
-
 θ = [0.0, 0.0, 0.0, 0.0, 0.0]
 
-function fjump(θ, X, share, Z, v_50, cdid)
+function fjump(θ)
         # run objective function and get key outputs
         θ_matrix = [θ[1], θ[2], θ[3], θ[4], θ[5]]  # Reshape the vector into a one-row matrix
         Q, θ₁, ξ, 𝒯 = demand_objective_function(θ_matrix,X,share,Z,v_50,cdid)
@@ -207,9 +233,9 @@ function fjump(θ, X, share, Z, v_50, cdid)
         return Q
 end
 
-fjump(θ,X,share,Z,v_50,cdid)
+fjump(θ)
 
-function demandgradient(θ, X,share,Z,v_50,cdid)
+function demandgradient(θ)
        # run objective function to update ξ and 𝒯 values for new θ₂
        θ_matrix = [θ[1], θ[2], θ[3], θ[4], θ[5]]  # Reshape the vector into a one-row matrix
        Q, θ₁, ξ, 𝒯 = demand_objective_function(θ_matrix,X,share,Z,v_50,cdid)
@@ -218,12 +244,12 @@ function demandgradient(θ, X,share,Z,v_50,cdid)
       return g
 end 
 
-demandgradient(θ,X,share,Z,v_50,cdid)
+demandgradient(θ)
 
 JuMP.register(BLPdemand,:fjump,5,fjump,demandgradient;autodiff=false)
 #JuMP.register(BLPdemand,:fjump,5,fjump;autodiff=true)
 
-JuMP.@NLobjective(BLPdemand,Min,fjump(θ[1],θ[2],θ[3],θ[4],θ[5]))
+JuMP.@NLobjective(BLPdemand,Min,fjump())
 
 JuMP.optimize!(BLPdemand)
 minf=JuMP.objective_value(BLPdemand)
