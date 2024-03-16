@@ -112,27 +112,27 @@ CSV.write("BLP_instruments.csv", DataFrame(Z, :auto))
 
 # Exploring my demand objective function -----------------------------------------------------
 
-δ = zeros(size(share))
+#δ = zeros(size(share))
 
-n_individuals = size(v_50,2)
-n_products = size(X,1)
+#n_individuals = size(v_50,2)
+#n_products = size(X,1)
 
-θ₂ = [0.0, 0.0, 0.0, 0.0, 0.0]
+#θ₂ = [0.0, 0.0, 0.0, 0.0, 0.0]
 
 # initial guess for θ₁. Random effects are set to 0.
 
 # repeat δ for each individual. 2217x50 matrix
 
-δ = repeat(δ,1,n_individuals) 
+#δ = repeat(δ,1,n_individuals) 
 
 
-μ = zeros(n_products, n_individuals)
+#μ = zeros(n_products, n_individuals)
 
-for market in unique(cdid)
-    μ[cdid.==market,:] = X[cdid.==market,Not(3)] * (v_50[market,:,:] .* θ₂')' 
-end
+#for market in unique(cdid)
+    #μ[cdid.==market,:] = X[cdid.==market,Not(3)] * (v_50[market,:,:] .* θ₂')' 
+#end
 
-μ
+#μ
 
 # Minimize objective function -----------------------------------------------------
 using Optim             # for minimization functions
